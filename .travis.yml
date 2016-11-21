@@ -7,14 +7,12 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - boost-latest
     packages:
       - g++-5
-      - g++-6
 before_install:
-  - sudo add-apt-repository --yes ppa:beineri/opt-qt57-trusty
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt561
   - sudo apt-get update -q
-  - sudo apt-get install -qq g++-6 qt57-meta-full
+  - sudo apt-get install -qq g++-6 qt56base qt56declarative
   - curl https://cmake.org/files/v3.4/cmake-3.4.0-Linux-x86_64.tar.gz -o cmake-3.4.0-Linux-x86_64.tar.gz
   - tar xf cmake-3.4.0-Linux-x86_64.tar.gz
   - export PATH=$PWD/cmake-3.4.0-Linux-x86_64/bin/:$PATH
