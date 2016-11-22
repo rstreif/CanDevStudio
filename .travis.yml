@@ -23,4 +23,6 @@ before_install:
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 script:
-  - travis/build.sh
+  - travis/build.sh > /tmp/build_log.out 2>&1
+after_failure:
+  - cat /tmp/build_log.out
