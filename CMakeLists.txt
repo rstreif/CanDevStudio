@@ -19,6 +19,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(src/gui)
+add_subdirectory(src/common)
 
 enable_testing()
 add_subdirectory(3rdParty/fakeit)
