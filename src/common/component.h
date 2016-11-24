@@ -10,11 +10,11 @@
 #include <tuple>
 #include <type_traits>
 
-enum SinkType : int
+enum class SinkType
 {
-    UndefinedSinkType,
-    CanFrameSinkType,
-    CanSignalSinkType
+    Undefined,
+    CanFrame,
+    CanSignal
 };
 
 enum class SourceType
@@ -54,11 +54,9 @@ struct Source : public SourceTag
 };
 
 
-class  CanFrameSink : public Sink<CanFrameSinkType>
+class  CanFrameSink : public Sink<SinkType::CanFrame>
 {
 public:
-    static const SinkType sinkType {CanFrameSinkType};
-
     virtual bool FrameIn(const CanFrame& frame) = 0;
 };
 
@@ -66,13 +64,13 @@ struct CanFrameSource : public Source<SourceType::CanFrame, CanFrameSink>
 {
 };
 
-template<typename A>
+template<typename... A>
 struct Component
 {
     Component()
     {
-//        (processArguments<A>(), ...);
-        processArguments<A>();
+        (processArguments<A>(), ...);
+//        processArguments<A>();
     }
 
 //    virtual ~Component();
@@ -120,24 +118,29 @@ protected:
     typedef std::map<SourceType, std::vector<std::experimental::any> > ConnectionMap;
     ConnectionMap mConnection;
 
-    template<typename S>
+    template<typename S,
+             typename = std::enable_if_t<std::is_base_of<SinkTag, S>::value> >
     void processArguments()
     {
-//        mSinkVector.push_back(S::sinkType);
-        mSinkVector.push_back(S::sinkType);
-
+        mSinkVector.push_back(static_cast<SinkType>(S::sinkType));
     }
 
-//    typedef std::vector<SinkType> SinkVector;
-//    SinkVector mSinkVector;
+    template<typename S,
+             typename = std::enable_if_t<std::is_base_of<SourceTag, S>::value> >
+    void processArguments()
+    {
 
-    std::vector<SinkType> mSinkVector;
+        mSrcVector.push_back(static_cast<SourceType>(S::sourceType));
+    }
+
+    typedef std::vector<SinkType> SinkVector;
+    SinkVector mSinkVector;
 
     typedef std::vector<SourceType> SourceVector;
     SourceVector mSrcVector;
 };
 
-struct CanDevice : public Component<CanFrameSink>
+struct CanDevice : public Component<CanFrameSource>
 {
 };
 
