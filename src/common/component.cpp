@@ -1,13 +1,13 @@
 #include "component.h"
+#include <iostream>
+#include <type_traits>
+
+struct A {};
+struct B : A{};
 
 int main()
 {
     CanDevice canDev;
-    CanFilter canFilter;
-    CanRawView canView;
-
-    canDev.connect(CanFrameSource, &canFilter);
-    canFilter.connect(CanFrameSource, &canView);
 
     return 0;
 }

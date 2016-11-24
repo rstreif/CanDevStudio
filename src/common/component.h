@@ -7,17 +7,21 @@
 #include <cstdint>
 #include <algorithm>
 #include <memory>
+#include <tuple>
+#include <type_traits>
 
-enum eSinkType
+enum SinkType : int
 {
-    CanFrameSink,
-    CanSignalSink
+    UndefinedSinkType,
+    CanFrameSinkType,
+    CanSignalSinkType
 };
 
-enum eSourceType
+enum class SourceType
 {
-    CanFrameSource,
-    CanSignalSource,
+    Undefined,
+    CanFrame,
+    CanSignal
 };
 
 struct CanFrame
@@ -28,174 +32,191 @@ struct CanFrame
     bool error;
 };
 
-class ICanFrameSink
+struct SinkTag {};
+
+template<SinkType _sinkType>
+struct Sink : public SinkTag
+{
+    static const SinkType sinkType = _sinkType;
+};
+
+struct SourceTag {};
+
+template<SourceType _sourceType, typename... CompSink>
+struct Source : public SourceTag
+{
+    static const SourceType sourceType {_sourceType};
+
+    virtual std::vector<SinkType> getCompatibleSinks()
+    {
+        return { (CompSink::sinkType)... };
+    }
+};
+
+
+class  CanFrameSink : public Sink<CanFrameSinkType>
 {
 public:
+    static const SinkType sinkType {CanFrameSinkType};
+
     virtual bool FrameIn(const CanFrame& frame) = 0;
 };
 
-class Component
+struct CanFrameSource : public Source<SourceType::CanFrame, CanFrameSink>
 {
-public:
-//    virtual ~IComponent();
+};
 
-    virtual std::vector<eSourceType> getSourceTypes() const = 0;
-    virtual std::vector<eSinkType> getSinkTypes() const = 0;
-    virtual std::experimental::any getCompSink(eSourceType src) = 0;
-
-    virtual bool connect(eSourceType src, Component *sink)
+template<typename A>
+struct Component
+{
+    Component()
     {
-        auto srcTypes = getSourceTypes();
+//        (processArguments<A>(), ...);
+        processArguments<A>();
+    }
 
-        if(std::find(srcTypes.begin(), srcTypes.end(), src) != srcTypes.end())
-        {
-            auto sinkInterface = sink->getCompSink(src);
+//    virtual ~Component();
 
-            if(!sinkInterface.empty())
-            {
-                mConnection[src].push_back(sinkInterface);
-                return true;
-            }
-        }
+//    virtual const std::vector<SourceType> getSourceTypes() const
+//    {
+//        return mSrcVector;
+//    }
 
-        //TODO: Not supported
+//    virtual const std::vector<SinkType> getSinkTypes() const
+//    {
+//        return mSinkVector;
+//    }
 
-        return false;
+//    virtual bool connect(SourceType src, Component *sink)
+//    {
+//        auto srcTypes = getSourceTypes();
+
+//        if(std::find(srcTypes.begin(), srcTypes.end(), src) != srcTypes.end())
+//        {
+//            auto sinkInterface = sink->getCompSink(src);
+
+//            if(!sinkInterface.empty())
+//            {
+//                mConnection[src].push_back(sinkInterface);
+//                return true;
+//            }
+//        }
+
+//        //TODO: Not supported
+
+//        return false;
+//    }
+
+    template<typename S>
+    S& operator|(S& obj)
+    {
+//        (v.push_back(args), ...);
+//        for()
+
+//        self.connect()
     }
 
 protected:
-    std::map<eSourceType, std::vector<std::experimental::any> > mConnection;
+    typedef std::map<SourceType, std::vector<std::experimental::any> > ConnectionMap;
+    ConnectionMap mConnection;
+
+    template<typename S>
+    void processArguments()
+    {
+//        mSinkVector.push_back(S::sinkType);
+        mSinkVector.push_back(S::sinkType);
+
+    }
+
+//    typedef std::vector<SinkType> SinkVector;
+//    SinkVector mSinkVector;
+
+    std::vector<SinkType> mSinkVector;
+
+    typedef std::vector<SourceType> SourceVector;
+    SourceVector mSrcVector;
 };
 
-class CanDevice : public Component, public ICanFrameSink
+struct CanDevice : public Component<CanFrameSink>
 {
-public:
-    std::vector<eSourceType> getSourceTypes() const
-    {
-        return {{CanFrameSource}};
-    }
-
-    std::vector<eSinkType> getSinkTypes() const
-    {
-        return {{CanFrameSink}};
-    }
-
-    std::experimental::any getCompSink(eSourceType src)
-    {
-        switch(src)
-        {
-        case CanFrameSource:
-            return this;
-
-        default:
-            return nullptr;
-        }
-    }
-
-    // CanFrameSource handling
-    void receiveThread()
-    {
-        while(true)
-        {
-            CanFrame frame;
-
-            //receive_from_dev(&frame)
-
-            for(const auto &v:mConnection[CanFrameSource])
-            {
-                auto iface = std::experimental::any_cast<ICanFrameSink*>(v);
-
-                iface->FrameIn(frame);
-            }
-        }
-    }
-
-    // CanFrameSink handling
-    bool FrameIn(const CanFrame& frame)
-    {
-        (void) frame;
-
-        //send_to_device(frame);
-        return true;
-    }
 };
 
-class CanFilter : public Component, public ICanFrameSink
-{
-public:
-    std::vector<eSourceType> getSourceTypes() const
-    {
-        return {{CanFrameSource}};
-    }
+//class CanFilter : public Component, public CanFrameSink
+//{
+//public:
+//    std::vector<eSourceType> getSourceTypes() const
+//    {
+//        return {{CanFrameSourceType}};
+//    }
 
-    std::vector<eSinkType> getSinkTypes() const
-    {
-        return {{CanFrameSink}};
-    }
+//    std::vector<eSinkType> getSinkTypes() const
+//    {
+//        return {{CanFrameSinkType}};
+//    }
 
-    std::experimental::any getCompSink(eSourceType src)
-    {
-        switch(src)
-        {
-        case CanFrameSource:
-            return this;
+//    std::experimental::any getCompSink(eSourceType src)
+//    {
+//        switch(src)
+//        {
+//        case CanFrameSourceType:
+//            return this;
 
-        default:
-            return std::experimental::any();
-        }
-    }
+//        default:
+//            return std::experimental::any();
+//        }
+//    }
 
-    // CanFrameSink->CanFrameSource handling
-    bool FrameIn(const CanFrame& frame)
-    {
-        // do some filtering and send to registered sinks
+//    // CanFrameSink->CanFrameSource handling
+//    bool FrameIn(const CanFrame& frame)
+//    {
+//        // do some filtering and send to registered sinks
 
-        for(const auto &v:mConnection[CanFrameSource])
-        {
-            auto iface = std::experimental::any_cast<ICanFrameSink*>(v);
+//        for(const auto &v:mConnection[CanFrameSourceType])
+//        {
+//            auto iface = std::experimental::any_cast<CanFrameSink*>(v);
 
-            iface->FrameIn(frame);
-        }
+//            iface->FrameIn(frame);
+//        }
 
-        return true;
-    }
+//        return true;
+//    }
 
-};
+//};
 
-class CanRawView : public Component, public ICanFrameSink
-{
-public:
-    std::vector<eSourceType> getSourceTypes() const
-    {
-        return {};
-    }
+//class CanRawView : public Component, public CanFrameSink
+//{
+//public:
+//    std::vector<eSourceType> getSourceTypes() const
+//    {
+//        return {};
+//    }
 
-    std::vector<eSinkType> getSinkTypes() const
-    {
-        return {{CanFrameSink}};
-    }
+//    std::vector<eSinkType> getSinkTypes() const
+//    {
+//        return {{CanFrameSinkType}};
+//    }
 
-    std::experimental::any getCompSink(eSourceType src)
-    {
-        switch(src)
-        {
-        case CanFrameSource:
-            return this;
+//    std::experimental::any getCompSink(eSourceType src)
+//    {
+//        switch(src)
+//        {
+//        case CanFrameSourceType:
+//            return this;
 
-        default:
-            return nullptr;
-        }
-    }
+//        default:
+//            return std::experimental::any();
+//        }
+//    }
 
-    // CanFrameSink handling
-    bool FrameIn(const CanFrame& frame)
-    {
-        (void) frame;
+//    // CanFrameSink handling
+//    bool FrameIn(const CanFrame& frame)
+//    {
+//        (void) frame;
 
-        //display in widnow(frame);
-        return true;
-    }
-};
+//        //display in widnow(frame);
+//        return true;
+//    }
+//};
 
 
 #endif // __COMPONENT_H
