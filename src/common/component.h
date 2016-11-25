@@ -70,7 +70,6 @@ struct Component
     Component()
     {
         (processArguments<A>(), ...);
-//        processArguments<A>();
     }
 
 //    virtual ~Component();
@@ -105,32 +104,21 @@ struct Component
 //        return false;
 //    }
 
-    template<typename S>
-    S& operator|(S& obj)
-    {
-//        (v.push_back(args), ...);
-//        for()
-
-//        self.connect()
-    }
-
 protected:
     typedef std::map<SourceType, std::vector<std::experimental::any> > ConnectionMap;
     ConnectionMap mConnection;
 
-    template<typename S,
-             typename = std::enable_if_t<std::is_base_of<SinkTag, S>::value> >
+    template<typename S>
     void processArguments()
     {
-        mSinkVector.push_back(static_cast<SinkType>(S::sinkType));
-    }
-
-    template<typename S,
-             typename = std::enable_if_t<std::is_base_of<SourceTag, S>::value> >
-    void processArguments()
-    {
-
-        mSrcVector.push_back(static_cast<SourceType>(S::sourceType));
+        if constexpr(std::is_base_of<SinkTag, S>::value)
+        {
+            mSinkVector.push_back(static_cast<SinkType>(S::sinkType));
+        }
+        else if constexpr(std::is_base_of<SourceTag, S>::value)
+        {
+            mSrcVector.push_back(static_cast<SourceType>(S::sourceType));
+        }
     }
 
     typedef std::vector<SinkType> SinkVector;
@@ -140,86 +128,9 @@ protected:
     SourceVector mSrcVector;
 };
 
-struct CanDevice : public Component<CanFrameSource>
+struct CanDevice : public Component<CanFrameSink, CanFrameSink, CanFrameSource>
 {
 };
-
-//class CanFilter : public Component, public CanFrameSink
-//{
-//public:
-//    std::vector<eSourceType> getSourceTypes() const
-//    {
-//        return {{CanFrameSourceType}};
-//    }
-
-//    std::vector<eSinkType> getSinkTypes() const
-//    {
-//        return {{CanFrameSinkType}};
-//    }
-
-//    std::experimental::any getCompSink(eSourceType src)
-//    {
-//        switch(src)
-//        {
-//        case CanFrameSourceType:
-//            return this;
-
-//        default:
-//            return std::experimental::any();
-//        }
-//    }
-
-//    // CanFrameSink->CanFrameSource handling
-//    bool FrameIn(const CanFrame& frame)
-//    {
-//        // do some filtering and send to registered sinks
-
-//        for(const auto &v:mConnection[CanFrameSourceType])
-//        {
-//            auto iface = std::experimental::any_cast<CanFrameSink*>(v);
-
-//            iface->FrameIn(frame);
-//        }
-
-//        return true;
-//    }
-
-//};
-
-//class CanRawView : public Component, public CanFrameSink
-//{
-//public:
-//    std::vector<eSourceType> getSourceTypes() const
-//    {
-//        return {};
-//    }
-
-//    std::vector<eSinkType> getSinkTypes() const
-//    {
-//        return {{CanFrameSinkType}};
-//    }
-
-//    std::experimental::any getCompSink(eSourceType src)
-//    {
-//        switch(src)
-//        {
-//        case CanFrameSourceType:
-//            return this;
-
-//        default:
-//            return std::experimental::any();
-//        }
-//    }
-
-//    // CanFrameSink handling
-//    bool FrameIn(const CanFrame& frame)
-//    {
-//        (void) frame;
-
-//        //display in widnow(frame);
-//        return true;
-//    }
-//};
 
 
 #endif // __COMPONENT_H

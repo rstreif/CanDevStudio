@@ -9,7 +9,7 @@ option(WITH_COVERAGE OFF)
 
 find_package(Qt5Core REQUIRED)
 
-add_definitions(-Wall -Wextra)
+add_definitions(-Wall -Wextra -std=c++1z)
 
 if(WITH_COVERAGE)
     set(CMAKE_CXX_FLAGS "-g -O0 -Wwrite-strings -fprofile-arcs -ftest-coverage")
@@ -17,7 +17,6 @@ if(WITH_COVERAGE)
     set(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(src/gui)
 add_subdirectory(src/common)
 
