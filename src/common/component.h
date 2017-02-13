@@ -9,6 +9,8 @@
 #include <memory>
 #include <tuple>
 #include <type_traits>
+#include <set>
+#include <iostream>
 
 enum class SinkType
 {
@@ -34,35 +36,95 @@ struct CanFrame
 
 struct SinkTag {};
 
-template<SinkType _sinkType>
+template<SinkType _sinkType, typename Interface>
 struct Sink : public SinkTag
 {
     static const SinkType sinkType = _sinkType;
+
+    Interface mDataIn {nullptr};
 };
 
 struct SourceTag {};
 
-template<SourceType _sourceType, typename... CompSink>
+template<SourceType _sourceType, typename Interface>
 struct Source : public SourceTag
 {
     static const SourceType sourceType {_sourceType};
 
-    virtual std::vector<SinkType> getCompatibleSinks()
+    std::vector<Interface> mDataOut;
+};
+
+typedef std::function<bool(const CanFrame &)> CanFrameInterface;
+
+class  CanFrameSink : public Sink<SinkType::CanFrame, CanFrameInterface>
+{
+};
+
+struct CanFrameSource : public Source<SourceType::CanFrame, CanFrameInterface>
+{
+};
+
+template<typename S, typename T, int size = std::tuple_size<T>::value>
+decltype(auto) _findElement(S s, T &t, typename std::enable_if<size != 1 && std::is_base_of<SourceTag, typename std::tuple_element<size - 1, T>::type >::value>::type* = 0)
+{
+    auto &e = std::get<size - 1>(t);  
+
+    if (e.sourceType == s)
     {
-        return { (CompSink::sinkType)... };
+        return e;
     }
-};
 
+    return _findElement<S, T, size - 1>(s, t);
+}
 
-class  CanFrameSink : public Sink<SinkType::CanFrame>
+template<typename S, typename T, int size = std::tuple_size<T>::value>
+decltype(auto) _findElement(S s, T &t, typename std::enable_if<size != 1 && std::is_base_of<SinkTag, typename std::tuple_element<size - 1, T>::type >::value>::type* = 0)
 {
-public:
-    virtual bool FrameIn(const CanFrame& frame) = 0;
-};
+    auto &e = std::get<size - 1>(t);  
 
-struct CanFrameSource : public Source<SourceType::CanFrame, CanFrameSink>
+    if constexpr(std::is_same<S, SinkType>::value)
+    {
+        if(e.sinkType == s)
+        {
+            return e;
+        }
+    }
+        
+    return _findElement<S, T, size - 1>(s, t);
+}
+
+template<typename S, typename T, int size = std::tuple_size<T>::value>
+decltype(auto) _findElement(S s, T &t, typename std::enable_if<size == 1 && std::is_base_of<SourceTag, typename std::tuple_element<0, T>::type >::value>::type* = 0)
 {
-};
+    auto &e = std::get<0>(t);  
+
+    if (e.sourceType == s)
+    {
+        return e;
+    }
+
+    throw std::runtime_error(std::string(typeid(T).name()) + " not found!");
+    
+    return _findElement<S, T, 0>(s, t);
+}
+
+template<typename S, typename T, int size = std::tuple_size<T>::value>
+decltype(auto) _findElement(S s, T &t, typename std::enable_if<size == 1 && std::is_base_of<SinkTag, typename std::tuple_element<0, T>::type >::value>::type* = 0)
+{
+    auto &e = std::get<0>(t);  
+
+    if constexpr(std::is_same<S, SinkType>::value)
+    {
+        if(e.sinkType == s)
+        {
+            return e;
+        }
+    }
+        
+    throw std::runtime_error(std::string(typeid(T).name()) + " not found!");
+    
+    return _findElement<S, T, 0>(s, t);
+}
 
 template<typename... A>
 struct Component
@@ -72,7 +134,7 @@ struct Component
         (processArguments<A>(), ...);
     }
 
-//    virtual ~Component();
+    //virtual ~Component();
 
 //    virtual const std::vector<SourceType> getSourceTypes() const
 //    {
@@ -84,51 +146,69 @@ struct Component
 //        return mSinkVector;
 //    }
 
-//    virtual bool connect(SourceType src, Component *sink)
-//    {
-//        auto srcTypes = getSourceTypes();
+    //virtual bool connect(SourceType src, Component *sink)
+    //{
+        //if(std::find(mSrcVector.begin(), mSrcVector.end(), src) != mSrcVector.end())
+        //{
+            //auto sinkInterface = sink->getCompSink(src);
 
-//        if(std::find(srcTypes.begin(), srcTypes.end(), src) != srcTypes.end())
-//        {
-//            auto sinkInterface = sink->getCompSink(src);
+            //if(!sinkInterface.empty())
+            //{
+                //mConnection[src].push_back(sinkInterface);
+                //return true;
+            //}
+        //}
 
-//            if(!sinkInterface.empty())
-//            {
-//                mConnection[src].push_back(sinkInterface);
-//                return true;
-//            }
-//        }
+        ////TODO: Not supported
 
-//        //TODO: Not supported
-
-//        return false;
-//    }
-
+        //return false;
+    //}
+    //
+    
 protected:
     typedef std::map<SourceType, std::vector<std::experimental::any> > ConnectionMap;
     ConnectionMap mConnection;
+
+
+    decltype(auto) findElement(SourceType src)
+    {
+        return ::_findElement(src, mElements);
+        //return src;
+    }
 
     template<typename S>
     void processArguments()
     {
         if constexpr(std::is_base_of<SinkTag, S>::value)
         {
-            mSinkVector.push_back(static_cast<SinkType>(S::sinkType));
+            auto result = mSinkVector.insert(static_cast<SinkType>(S::sinkType));
+
+            if(!result.second) {
+                throw std::runtime_error(std::string("Duplicate sink '") + typeid(S).name() + "' in '" + typeid(this).name() + "' class");
+            }
         }
         else if constexpr(std::is_base_of<SourceTag, S>::value)
         {
-            mSrcVector.push_back(static_cast<SourceType>(S::sourceType));
+            auto s = findElement(S::sourceType);
+
+            auto result = mSrcVector.insert(static_cast<SourceType>(S::sourceType));
+            
+            if(!result.second) {
+                 throw std::runtime_error(std::string("Duplicate source '") + typeid(S).name() + "' in '" + typeid(this).name() + "' class");
+            }
         }
     }
 
-    typedef std::vector<SinkType> SinkVector;
+    typedef std::set<SinkType> SinkVector;
     SinkVector mSinkVector;
 
-    typedef std::vector<SourceType> SourceVector;
+    typedef std::set<SourceType> SourceVector;
     SourceVector mSrcVector;
+
+    std::tuple<A...> mElements;
 };
 
-struct CanDevice : public Component<CanFrameSink, CanFrameSink, CanFrameSource>
+struct CanDevice : public Component<CanFrameSink, CanFrameSource>
 {
 };
 
