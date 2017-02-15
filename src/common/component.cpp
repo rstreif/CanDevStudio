@@ -9,5 +9,7 @@ int main()
 {
     CanDevice canDev;
 
+    canDev.test();
+
     return 0;
 }
