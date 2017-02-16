@@ -66,30 +66,6 @@ struct CanFrameSource : public Source<SourceType::CanFrame, CanFrameInterface>
 {
 };
 
-template<typename S, typename T, int size = std::tuple_size<T>::value>
-decltype(auto) _findElement(S s, T &t)
-{
-    auto &e = std::get<size - 1>(t);  
-
-    if constexpr(std::is_same<std::decay_t<S>, std::decay_t<decltype(e.type)> >::value)
-    {
-        if (e.type == s)
-        {
-            return e;
-        }
-        else if constexpr(size > 1)
-        {
-            return _findElement<S, T, size - 1>(s, t);
-        }
-    } 
-    else if constexpr(size > 1)
-    {
-        return _findElement<S, T, size - 1>(s, t);
-    }
-
-    static_assert(size != 0, "dupa");
-}
-
 template<typename... A>
 struct Component
 {
@@ -98,55 +74,79 @@ struct Component
         (processArguments<A>(), ...);
     }
 
-    //virtual ~Component();
+    virtual ~Component() { } 
+        
+    template <typename F>
+    bool connect(SourceType src, F &func)
+    {
+        return connect(src, mElements, func);
+    }
+
+    std::vector<SourceType> getSources() const
+    {
+        return getSources(mElements);
+    }
    
 protected:
-    typedef std::map<SourceType, std::vector<std::experimental::any> > ConnectionMap;
-    ConnectionMap mConnection;
-
     template<typename S>
     void processArguments()
     {
-        if constexpr(std::is_base_of<SinkTag, S>::value)
-        {
-            auto result = mSinkVector.insert(S::type);
+        // Will fail to compile if not all elements are unique
+        std::get<S>(mElements);
 
-            if(!result.second) {
-                throw std::runtime_error(std::string("Duplicate sink '") + typeid(S).name() + "' in '" + typeid(this).name() + "' class");
-            }
+        if constexpr(std::is_base_of<SourceTag, S>::value)
+        {
+            mSources.push_back(S::type);
         }
-        else if constexpr(std::is_base_of<SourceTag, S>::value)
+        else if constexpr(std::is_base_of<SinkTag, S>::value)
         {
-            mMap.insert(std::make_pair(S::type, S()));
-
-            auto result = mSrcVector.insert(S::type);
-            
-            if(!result.second) {
-                 throw std::runtime_error(std::string("Duplicate source '") + typeid(S).name() + "' in '" + typeid(this).name() + "' class");
-            }
+            mSinks.push_back(S::type);
+        }
+        else
+        {
+            // Causes compilation error. Only Sources and Sinks are accepted.
+            std::get<Component>(mElements);
         }
     }
 
-    typedef std::set<SinkType> SinkVector;
-    SinkVector mSinkVector;
+    template<typename F, typename T, int size = std::tuple_size<T>::value>
+    bool connect(SourceType src, T &t, F &func)
+    {
+        auto &e = std::get<size - 1>(t);  
 
-    typedef std::set<SourceType> SourceVector;
-    SourceVector mSrcVector;
+        if constexpr(std::is_base_of<SourceTag, std::decay_t<decltype(e)> >::value)
+        {
+            if (e.type == src)
+            {
+                e.mDataOut.push_back(func);
+                return true;
+            }
+        } 
+        
+        if constexpr(size > 1)
+        {
+            return connect<F, T, size - 1>(src, t, func);
+        }
 
-    std::map<SourceType, boost::variant<A...>> mMap;
-    boost::variant<A...> mElements;
+        return false;
+    }
+
+    std::tuple<A...> mElements;
+    std::vector<SinkType> mSinks;
+    std::vector<SourceType> mSources;
 };
 
 struct CanDevice : public Component<CanFrameSink, CanFrameSource>
 {
     void test()
     {
-        for (auto i : mMap)
-        {
-            std::cout << "dupa " << static_cast<int>(i.first) << std::endl;
-        }
+        CanFrameInterface b;
+        
+        std::cout << "aaaaa " << connect(SourceType::Undefined, b) << std::endl;
+        std::cout << "aaaaa " << connect(SourceType::CanFrame, b) << std::endl;
+        std::cout << "aaaaa " << connect(SourceType::CanFrame, b) << std::endl;
 
-        auto dupa = boost::get<CanFrameSource>(mMap[SourceType::CanFrame]);
+        std::cout << "bbb " << std::get<CanFrameSource>(mElements).mDataOut.size() << std::endl;
     }
 };
 
