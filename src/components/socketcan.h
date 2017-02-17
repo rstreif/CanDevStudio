@@ -1,8 +1,8 @@
 #ifndef __SOCKETCAN_H
 #define __SOCKETCAN_H
 
-#include "../common/component.h"
-#include "../common/eventhandlers/canframe.h"
+#include <common/component.h>
+#include <common/event_canframe.h>
 
 struct SocketCan : public Component<CanFrameSink, CanFrameSource> {
 

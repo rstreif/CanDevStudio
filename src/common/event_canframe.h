@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <functional>
-#include "../event.h"
+#include "event.h"
 
 struct CanFrame {
     uint32_t id;

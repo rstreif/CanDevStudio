@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <event.h>
+#include <common/event.h>
 
 template <typename... A>
 struct Component {
