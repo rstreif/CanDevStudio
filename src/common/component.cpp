@@ -1,15 +1,9 @@
-#include "component.h"
 #include <iostream>
-#include <type_traits>
-
-struct A {};
-struct B : A{};
+#include "../components/socketcan.h"
 
 int main()
 {
-    CanDevice canDev;
-
-    canDev.test();
+    SocketCan sc("can0");
 
     return 0;
 }
