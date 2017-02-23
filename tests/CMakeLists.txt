@@ -5,6 +5,6 @@ add_executable(example_test example.cpp)
 add_test( NAME ExampleTest COMMAND example_test)
 
 add_executable(socketcan_test socketcan_test.cpp)
-target_link_libraries(socketcan_test components)
+target_link_libraries(socketcan_test components Qt5::Core Qt5::SerialBus)
 add_test( NAME SocketCANTest COMMAND socketcan_test)
 
