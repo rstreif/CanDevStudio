@@ -1,7 +1,6 @@
 #define CATCH_CONFIG_RUNNER
 #include <fakeit.hpp>
 #include <iostream>
-#include <components/socketcan.h>
 #include <QCoreApplication>
 #include <QCanBus>
 #include <QCanBusFrame>
@@ -12,17 +11,17 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    //QCoreApplication a(argc, argv);
  
-    SocketCan sc;
-    Settings s {"socketcan", "can0"};
+    //SocketCan sc;
+    //Settings s {"socketcan", "can0"};
 
-    sc.configure(s);
-    sc.start();
-    sc.connect(EventType::CanFrame, [] (const CanFrame &cf) {
-                std::cout << cf.id << std::endl;
-            });
+    //sc.configure(s);
+    //sc.start();
+    //sc.connect(EventType::CanFrame, [] (const CanFrame &cf) {
+                //std::cout << cf.id << std::endl;
+            //});
 
-    return a.exec();
+    //return a.exec();
 }
 

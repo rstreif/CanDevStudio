@@ -1,6 +1,6 @@
 
 set(SRC
-    socketcan.cpp
+    candevice.cpp
 )
 
 add_library(components STATIC ${SRC})
