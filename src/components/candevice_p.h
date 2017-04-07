@@ -8,7 +8,7 @@
 #include <QVariant>
 #include "candevice.h"
 
-class CanDevicePrivate 
+class CanDevicePrivate
 {
 public:
     QString mBackend;

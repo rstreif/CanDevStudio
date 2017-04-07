@@ -1,8 +1,18 @@
 #include <utility>
 #include <QQueue>
-#include "candevice_p.h"
 #include "candevice.h"
+#include "candevice_p.h"
 
+#include <iostream>
+
+CanDevice::CanDevice() :
+    d_ptr(new CanDevicePrivate)
+{
+}
+
+CanDevice::~CanDevice()
+{
+}
 
 bool CanDevice::init(const QString &backend, const QString &interface)
 {
@@ -13,13 +23,15 @@ bool CanDevice::init(const QString &backend, const QString &interface)
     d->mInterface = interface;
     d->mDevice.reset(QCanBus::instance()->createDevice(backend, interface, &errorString));
 
-    if (d->mDevice) {
+    std::cout << errorString.toStdString() << std::endl;
+
+    if (!d->mDevice) {
         return false;
     }
 
-    connect(d->mDevice.take(), &QCanBusDevice::framesWritten, this, &CanDevice::framesWritten);
-    connect(d->mDevice.take(), &QCanBusDevice::framesReceived, this, &CanDevice::framesReceived);
-    connect(d->mDevice.take(), &QCanBusDevice::errorOccurred, this, &CanDevice::errorOccurred);
+    connect(d->mDevice.data(), &QCanBusDevice::framesWritten, this, &CanDevice::framesWritten);
+    connect(d->mDevice.data(), &QCanBusDevice::framesReceived, this, &CanDevice::framesReceived);
+    connect(d->mDevice.data(), &QCanBusDevice::errorOccurred, this, &CanDevice::errorOccurred);
 
     return true;
 }
@@ -32,15 +44,15 @@ void CanDevice::sendFrame(const QCanBusFrame &frame, const QVariant &context)
     if (!d->mDevice)
         return;
 
+    // Success will be reported in framesWritten signal.
+    // Sending may be buffered. Keep correlation between sending results and frame/context
+    d->mSendQueue.enqueue({frame, context});
+
     status = d->mDevice->writeFrame(frame);
 
     if(!status) {
         emit txStatus(status, frame, context);
-    }
-    else {
-        // Success will be reported in framesWritten signal.
-        // Sending may be buffered. Keep correlation between sending results and frame/context
-        d->mSendQueue.enqueue({frame, context});
+        d->mSendQueue.dequeue();
     }
 }
 
@@ -69,7 +81,8 @@ void CanDevice::framesReceived()
     }
 }
 
-void CanDevice::framesWritten(qint64) {
+void CanDevice::framesWritten(qint64) 
+{
     Q_D(CanDevice);
 
     auto sendItem = d->mSendQueue.dequeue(); 
