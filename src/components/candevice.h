@@ -21,12 +21,12 @@ public:
     bool init(const QString &backend, const QString &interface);
     bool start();
 
-public Q_SLOTS:
-    void sendFrame(const QCanBusFrame &frame, const QVariant &context);
-
 Q_SIGNALS:
     void frameReceived(const QCanBusFrame &frame);
     void txStatus(bool status, const QCanBusFrame &frame, const QVariant &context);
+
+public Q_SLOTS:
+    void sendFrame(const QCanBusFrame &frame, const QVariant &context);
 
 private Q_SLOTS:
     void errorOccurred(QCanBusDevice::CanBusError error);

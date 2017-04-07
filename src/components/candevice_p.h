@@ -6,6 +6,7 @@
 #include <QCanBusFrame>
 #include <QScopedPointer>
 #include <QVariant>
+#include <QVector>
 #include "candevice.h"
 
 class CanDevicePrivate
@@ -13,7 +14,7 @@ class CanDevicePrivate
 public:
     QString mBackend;
     QString mInterface;
-    QQueue<std::pair<QCanBusFrame, QVariant>> mSendQueue;
+    QVector<std::pair<QCanBusFrame, QVariant>> mSendQueue;
     QScopedPointer<QCanBusDevice> mDevice;
 };
 

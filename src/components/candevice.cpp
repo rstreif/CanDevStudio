@@ -42,13 +42,13 @@ void CanDevice::sendFrame(const QCanBusFrame &frame, const QVariant &context)
 
     // Success will be reported in framesWritten signal.
     // Sending may be buffered. Keep correlation between sending results and frame/context
-    d->mSendQueue.enqueue({frame, context});
+    d->mSendQueue.push_back({frame, context});
 
     status = d->mDevice->writeFrame(frame);
 
     if(!status) {
         emit txStatus(status, frame, context);
-        d->mSendQueue.dequeue();
+        d->mSendQueue.takeFirst();
     }
 }
 
@@ -67,9 +67,6 @@ void CanDevice::framesReceived()
 {
     Q_D(CanDevice);
 
-    if (!d->mDevice)
-        return;
-
     while (d->mDevice->framesAvailable()) {
         const QCanBusFrame frame = d->mDevice->readFrame();
 
@@ -81,16 +78,18 @@ void CanDevice::framesWritten(qint64)
 {
     Q_D(CanDevice);
 
-    auto sendItem = d->mSendQueue.dequeue(); 
-    emit txStatus(true, sendItem.first, sendItem.second);
+    if(!d->mSendQueue.isEmpty()) {
+        auto sendItem = d->mSendQueue.takeFirst(); 
+        emit txStatus(true, sendItem.first, sendItem.second);
+    }
 }
 
 void CanDevice::errorOccurred(QCanBusDevice::CanBusError error)
 {
     Q_D(CanDevice);
 
-    if(error == QCanBusDevice::WriteError) {
-        auto sendItem = d->mSendQueue.dequeue(); 
+    if(error == QCanBusDevice::WriteError && !d->mSendQueue.isEmpty()) {
+        auto sendItem = d->mSendQueue.takeFirst(); 
         emit txStatus(false, sendItem.first, sendItem.second);
     }
 }
