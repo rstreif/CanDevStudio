@@ -3,8 +3,6 @@
 #include "candevice.h"
 #include "candevice_p.h"
 
-#include <iostream>
-
 CanDevice::CanDevice() :
     d_ptr(new CanDevicePrivate)
 {
@@ -22,8 +20,6 @@ bool CanDevice::init(const QString &backend, const QString &interface)
     d->mBackend = backend;
     d->mInterface = interface;
     d->mDevice.reset(QCanBus::instance()->createDevice(backend, interface, &errorString));
-
-    std::cout << errorString.toStdString() << std::endl;
 
     if (!d->mDevice) {
         return false;

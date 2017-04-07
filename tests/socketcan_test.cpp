@@ -12,8 +12,8 @@ int main(int argc, char *argv[])
     CanDevice cd;
     int cnt = 0;
 
-    std::cout << cd.init("socketcan", "can0");
-    std::cout << cd.start();
+    cd.init("socketcan", "can0");
+    cd.start();
     
     QObject::connect(&timer, &QTimer::timeout, [&cnt, &cd] () {
                 QCanBusFrame f;
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     timer.start(1000);
 
-    std::cout << QObject::connect(&cd, &CanDevice::frameReceived, [] (const QCanBusFrame &frame) {
+    QObject::connect(&cd, &CanDevice::frameReceived, [] (const QCanBusFrame &frame) {
                 printf("r(1) %03X [%d] %s\n", frame.frameId(), frame.payload().size(), frame.payload().toHex().data());
             });
 
@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
                 printf("s(%hhu) %03X [%d] %s\n", status, frame.frameId(), frame.payload().size(), frame.payload().toHex().data());
             });
 
-    std::cout << std::endl;
 
     return a.exec();
 }
