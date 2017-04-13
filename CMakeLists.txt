@@ -11,12 +11,14 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5SerialBus REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
-set_property(TARGET Qt5::SerialBus PROPERTY INTERFACE_COMPILE_FEATURES "")
-set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_FEATURES "")
+if(Qt5Core_VERSION LESS 5.8)
+    message(SEND_ERROR "ERROR: Detected Qt verison: ${Qt5Widgets_VERSION}. Minimum Qt version: 5.8.0")
+endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-
-add_definitions(-Wall -Wextra -std=c++1z)
+if(NOT MSVC)
+    #MSVC produces a lot of errors due to Qt headers
+    add_definitions(-Wall -Wextra)
+endif()
 
 if(WITH_COVERAGE)
     set(CMAKE_CXX_FLAGS "-g -O0 -Wwrite-strings -fprofile-arcs -ftest-coverage")

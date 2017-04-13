@@ -1,5 +1,5 @@
-#define CATCH_CONFIG_RUNNER
-#include <fakeit.hpp>
+//#define CATCH_CONFIG_RUNNER
+//#include <fakeit.hpp>
 #include <QCoreApplication>
 #include <QTimer>
 #include <QVariant>
@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     CanDevice cd;
     int cnt = 0;
 
-    cd.init("socketcan", "can0");
+    cd.init("vectorcan", "can0");
     cd.start();
     
     QObject::connect(&timer, &QTimer::timeout, [&cnt, &cd] () {
