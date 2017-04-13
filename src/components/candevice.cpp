@@ -47,7 +47,7 @@ void CanDevice::sendFrame(const QCanBusFrame &frame, const QVariant &context)
     status = d->mDevice->writeFrame(frame);
 
     if(!status) {
-        emit txStatus(status, frame, context);
+        emit frameSent(status, frame, context);
         d->mSendQueue.takeFirst();
     }
 }
@@ -80,7 +80,7 @@ void CanDevice::framesWritten(qint64)
 
     if(!d->mSendQueue.isEmpty()) {
         auto sendItem = d->mSendQueue.takeFirst(); 
-        emit txStatus(true, sendItem.first, sendItem.second);
+        emit frameSent(true, sendItem.first, sendItem.second);
     }
 }
 
@@ -90,6 +90,6 @@ void CanDevice::errorOccurred(QCanBusDevice::CanBusError error)
 
     if(error == QCanBusDevice::WriteError && !d->mSendQueue.isEmpty()) {
         auto sendItem = d->mSendQueue.takeFirst(); 
-        emit txStatus(false, sendItem.first, sendItem.second);
+        emit frameSent(false, sendItem.first, sendItem.second);
     }
 }

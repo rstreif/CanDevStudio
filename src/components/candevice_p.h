@@ -7,7 +7,6 @@
 #include <QScopedPointer>
 #include <QVariant>
 #include <QVector>
-#include "candevice.h"
 
 class CanDevicePrivate
 {

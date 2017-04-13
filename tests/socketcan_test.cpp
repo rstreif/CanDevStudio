@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
                 printf("r(1) %03X [%d] %s\n", frame.frameId(), frame.payload().size(), frame.payload().toHex().data());
             });
 
-    QObject::connect(&cd, &CanDevice::txStatus, [] (bool status, const QCanBusFrame &frame, const QVariant &) {
+    QObject::connect(&cd, &CanDevice::frameSent, [] (bool status, const QCanBusFrame &frame, const QVariant &) {
                 printf("s(%hhu) %03X [%d] %s\n", status, frame.frameId(), frame.payload().size(), frame.payload().toHex().data());
             });
 

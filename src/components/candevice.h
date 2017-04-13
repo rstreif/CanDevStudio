@@ -6,7 +6,6 @@
 #include <QCanBusDevice>
 #include <memory>
 #include <QScopedPointer>
-//#include "candevice_p.h"
 
 class CanDevicePrivate;
 
@@ -23,7 +22,7 @@ public:
 
 Q_SIGNALS:
     void frameReceived(const QCanBusFrame &frame);
-    void txStatus(bool status, const QCanBusFrame &frame, const QVariant &context);
+    void frameSent(bool status, const QCanBusFrame &frame, const QVariant &context);
 
 public Q_SLOTS:
     void sendFrame(const QCanBusFrame &frame, const QVariant &context);
