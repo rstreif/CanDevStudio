@@ -9,6 +9,7 @@ option(WITH_COVERAGE OFF)
 
 find_package(Qt5Core REQUIRED)
 find_package(Qt5SerialBus REQUIRED)
+find_package(Qt5Widgets REQUIRED)
 
 set_property(TARGET Qt5::SerialBus PROPERTY INTERFACE_COMPILE_FEATURES "")
 set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_FEATURES "")
